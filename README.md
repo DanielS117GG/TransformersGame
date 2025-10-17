@@ -17,6 +17,7 @@ Para poder tomar el control tienes que acercarte alrededor del centro del punto,
 
 ## Nota:
  _El jugador contrario puede tomar el punto de control si cumple con los mismos requisitos antes mencionados._
+ 
 
 ## CASILLAS 
 Casillas especiales:
