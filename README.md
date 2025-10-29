@@ -82,3 +82,8 @@ Hay dos maneras de terminar el juego, la primera manera es cuando el jugador log
 11. Si un jugador esta ocupando una casilla no puede ocupar su casilla.
 
 [Activida_Figma](https://www.figma.com/design/yOWwqraf1zJyfFCLIKe4WI/Untitled?m=auto&t=8HbpQ4HX75hvKx2m-1)
+
+![Diagrama](assets/MapaConceptualTransformers.png)
+
+## Prompt 
+Generame un diagrama de flujo para un juego web , que en el diagrama de juego se describa paso a  paso en base a este proyecto ( se adjunnto un pdf ) , que tambien incluya los ciclos de juego , y los pasos para salir al menu .
