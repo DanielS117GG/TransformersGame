@@ -83,7 +83,7 @@ Hay dos maneras de terminar el juego, la primera manera es cuando el jugador log
 
 [Activida_Figma](https://www.figma.com/design/yOWwqraf1zJyfFCLIKe4WI/Untitled?m=auto&t=8HbpQ4HX75hvKx2m-1)
 
-![Diagrama](assets/MapaConceptualTransformers.png)
+![Diagrama](./Imagenes/MapaConceptualTransformers.png)
 
 ## Prompt 
 Generame un diagrama de flujo para un juego web , que en el diagrama de juego se describa paso a  paso en base a este proyecto ( se adjunnto un pdf ) , que tambien incluya los ciclos de juego , y los pasos para salir al menu .
