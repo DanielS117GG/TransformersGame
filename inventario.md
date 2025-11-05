@@ -5,6 +5,7 @@
 ## Rol: Desarrollador
 
 ### Actividades: Ir provando pormpts para ver cual es el que mejor funciona.
+- Con base a las IA´s dadas por el profesor hice un prototipo de como es que debe quedar nuesttro juego las ias que use fueron Firebase studio y Replit
 
 ## Daniel Alberto Solano Noyola
 
