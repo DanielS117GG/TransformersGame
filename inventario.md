@@ -20,4 +20,5 @@
 
 ![Diego]( Imagenes/diego.jpg)
 
-### Actividades: Crear el figma y ver la parte del diseño.
+### Actividades: Crear el figma y ver la parte del diseño. 
+- Creación mediante las IA´s Stich y Figma Make, de dos "bpcetos/ideas" de como puede quedar nuestro juego en una página web, con una interfaz aceptable y una buena jugabilidad.
