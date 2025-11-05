@@ -87,3 +87,63 @@ Hay dos maneras de terminar el juego, la primera manera es cuando el jugador log
 
 ## Prompt 
 Generame un diagrama de flujo para un juego web , que en el diagrama de juego se describa paso a  paso en base a este proyecto ( se adjunnto un pdf ) , que tambien incluya los ciclos de juego , y los pasos para salir al menu .
+
+
+
+# Versión WEB 
+
+## Reglas Simplificadas para Versión Web Lite
+- Modalidad: 1 jugador vs IA (o un set de jugadas predeterminadas por la máquina).​
+
+- Duración: 10 minutos promedio, máximo 15 minutos por partida.​
+
+- Objetivo: El primer jugador en controlar los tres puntos de control (A, B, C) gana la partida. Alternativamente, gana quien elimina a todos los personajes del rival antes del límite de tiempo.​
+
+- Preparación :
+Cada jugador escoge una facción (Autobots, Decepticons, Primals, Mercenarios).​
+
+- Se juega con 2 personajes por lado: 1 líder y 1 soldado. El líder tiene estadísticas elevadas: 
+ - 5 escudo, 4 vida
+ - 5 escudo, 4 vida. 
+  -El soldado: 
+ - 4 escudo, 3 vida
+ - 4 escudo, 3 vida.​
+
+- Solo hay tablero virtual con puntos A, B y C, más 4 casillas especiales y 6 casillas de beneficio.​
+
+- Mecánicas Simplificadas
+Turnos: Alternos, primero el jugador humano, luego la IA; cada uno mueve un personaje y realiza una acción.
+
+- Movimientos: 1 dado de 6 caras, avanza el personaje el número que salga.​
+
+- Acciones en el turno: El jugador puede:
+
+- Mover el personaje :
+
+- Usar carta de armamento (si tiene disponible)
+
+- Intentar tomar un punto de control (si está junto al punto y lanza dado de habilidad con resultado “Transformer”).​
+
+- Eventos y Cartas
+Cartas de armamento: Obtén una carta de armamento al caer en casilla especial. Solo puedes usar una por turno, desde el turno siguiente. Máximo 2 cartas simultáneas por jugador.​
+
+- Beneficios: Al caer en casilla beneficio puedes curar un punto de vida o sumar un punto de escudo (máximo permitido por personaje).​
+
+- Eventos: Si el tiempo supera los 8 turnos, se activa un evento aleatorio (daño global, escudo bloqueado, meteorito, etc.), sólo uno por partida para agilizar el flujo.​
+
+- IA Simplificada :
+La IA no calcula estrategia avanzada, sólo:
+
+- Prioriza controlar puntos (si está cerca)
+
+- Usa cartas de armamento al azar si tiene disponible
+
+- Ataca al jugador si está adyacente
+
+- Si tiene menos vida, busca casillas de beneficio; si no, mueve aleatorio.​
+
+- Fin del Juego :
+Gana el primero en controlar los tres puntos o eliminar ambos personajes rivales.
+
+- Si se acaba el tiempo, gana quien controla más puntos. En empate, quien tenga más vida total.​
+
