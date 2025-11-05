@@ -1,10 +1,210 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <title>Hola</title>
-</head>
-<body>
-  <h1>Hola</h1>
-</body>
-</html>
+import { useState, useCallback } from 'react';
+import { useGameState } from '@/hooks/useGameState';
+import { FactionSelector } from '@/components/game/FactionSelector';
+import { TutorialModal } from '@/components/game/TutorialModal';
+import { GameBoard } from '@/components/game/GameBoard';
+import { GameUI } from '@/components/game/GameUI';
+import { Faction } from '@/types/game';
+import { getRandomWeapon } from '@/data/weapons';
+import { getRandomEvent } from '@/data/events';
+import { toast } from 'sonner';
+
+const Index = () => {
+  const {
+    gameState,
+    setGameState,
+    setPlayerFaction,
+    startGame,
+    nextTutorialStep,
+    getCurrentPlayer,
+    endTurn,
+  } = useGameState();
+
+  const [selectedCharacter, setSelectedCharacter] = useState<string | null>(null);
+  const [diceResult, setDiceResult] = useState<number | null>(null);
+  const [highlightedCells, setHighlightedCells] = useState<number[]>([]);
+
+  const handleFactionSelect = useCallback((faction: Faction) => {
+    setPlayerFaction(0, faction);
+    
+    // AI selects random faction (but not the same as player)
+    const availableFactions: Faction[] = ['Autobots', 'Decepticons', 'Primals', 'Mercenarios'];
+    const aiFactions = availableFactions.filter(f => f !== faction);
+    const aiFaction = aiFactions[Math.floor(Math.random() * aiFactions.length)];
+    setPlayerFaction(1, aiFaction);
+    
+    startGame();
+  }, [setPlayerFaction, startGame]);
+
+  const handleRollDice = useCallback(() => {
+    if (!selectedCharacter) return;
+    
+    const result = Math.floor(Math.random() * 6) + 1;
+    setDiceResult(result);
+    
+    const character = getCurrentPlayer().characters.find(c => c.id === selectedCharacter);
+    if (!character) return;
+    
+    const possiblePositions: number[] = [];
+    for (let i = 1; i <= result; i++) {
+      const newPos = (character.position + i) % 30;
+      possiblePositions.push(newPos);
+    }
+    
+    setHighlightedCells(possiblePositions);
+    toast.success(`¡Dado lanzado! Resultado: ${result}`);
+  }, [selectedCharacter, getCurrentPlayer]);
+
+  const handleCellClick = useCallback((cellId: number) => {
+    if (!selectedCharacter || diceResult === null) return;
+    
+    if (!highlightedCells.includes(cellId)) {
+      toast.error('No puedes moverte a esta casilla');
+      return;
+    }
+    
+    setGameState(prev => {
+      const newState = { ...prev };
+      const playerIndex = newState.currentPlayerIndex;
+      const charIndex = newState.players[playerIndex].characters.findIndex(
+        c => c.id === selectedCharacter
+      );
+      
+      if (charIndex === -1) return prev;
+      
+      newState.players[playerIndex].characters[charIndex].position = cellId;
+      
+      // Check cell type
+      const cell = newState.boardCells.find(c => c.id === cellId);
+      if (!cell || cell.used) return newState;
+      
+      if (cell.type === 'special') {
+        const weapon = getRandomWeapon();
+        if (newState.players[playerIndex].weaponCards.length < 2) {
+          newState.players[playerIndex].weaponCards.push(weapon);
+          toast.success(`¡Obtuviste ${weapon.name}!`);
+        }
+        cell.used = true;
+      } else if (cell.type === 'benefit') {
+        const char = newState.players[playerIndex].characters[charIndex];
+        if (Math.random() > 0.5 && char.health < char.maxHealth) {
+          char.health++;
+          toast.success('¡Recuperaste 1 punto de vida!');
+        } else if (char.shield < char.maxShield) {
+          char.shield++;
+          toast.success('¡Ganaste 1 punto de escudo!');
+        }
+        cell.used = true;
+      }
+      
+      return newState;
+    });
+    
+    setDiceResult(null);
+    setHighlightedCells([]);
+    setSelectedCharacter(null);
+  }, [selectedCharacter, diceResult, highlightedCells, setGameState]);
+
+  const handleUseWeapon = useCallback((weaponIndex: number) => {
+    toast.info('Selecciona un enemigo para atacar');
+  }, []);
+
+  const handleEndTurn = useCallback(() => {
+    // Check for events
+    if (gameState.turn >= 8 && !gameState.eventTriggered) {
+      const event = getRandomEvent();
+      toast.warning(`Evento: ${event.name}`, {
+        description: event.description,
+      });
+      
+      setGameState(prev => {
+        const newState = { ...prev, eventTriggered: true };
+        event.effect(newState);
+        return newState;
+      });
+    }
+    
+    // Check victory conditions
+    const player = getCurrentPlayer();
+    if (player.controlledPoints.length === 3) {
+      setGameState(prev => ({
+        ...prev,
+        gamePhase: 'ended',
+        winner: player.id,
+      }));
+      toast.success('¡Victoria! Controlaste todos los puntos');
+      return;
+    }
+    
+    const enemy = gameState.players[gameState.currentPlayerIndex === 0 ? 1 : 0];
+    const allEnemyDead = enemy.characters.every(c => !c.isAlive);
+    if (allEnemyDead) {
+      setGameState(prev => ({
+        ...prev,
+        gamePhase: 'ended',
+        winner: player.id,
+      }));
+      toast.success('¡Victoria! Eliminaste a todos los enemigos');
+      return;
+    }
+    
+    setDiceResult(null);
+    setSelectedCharacter(null);
+    setHighlightedCells([]);
+    endTurn();
+  }, [gameState, getCurrentPlayer, endTurn, setGameState]);
+
+  if (gameState.gamePhase === 'setup') {
+    return <FactionSelector onSelectFaction={handleFactionSelect} />;
+  }
+
+  const allCharacters = [...gameState.players[0].characters, ...gameState.players[1].characters];
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-card">
+      <TutorialModal
+        step={gameState.tutorialStep}
+        onNext={nextTutorialStep}
+        isOpen={gameState.gamePhase === 'tutorial'}
+      />
+
+      {gameState.gamePhase === 'playing' && (
+        <div className="container mx-auto py-8 space-y-6">
+          <GameBoard
+            cells={gameState.boardCells}
+            characters={allCharacters}
+            onCellClick={handleCellClick}
+            highlightedCells={highlightedCells}
+          />
+          
+          <GameUI
+            gameState={gameState}
+            selectedCharacter={selectedCharacter}
+            onSelectCharacter={setSelectedCharacter}
+            onRollDice={handleRollDice}
+            onUseWeapon={handleUseWeapon}
+            onEndTurn={handleEndTurn}
+            diceResult={diceResult}
+          />
+        </div>
+      )}
+
+      {gameState.gamePhase === 'ended' && (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center space-y-6">
+            <h1 className="text-6xl font-black metallic-text">
+              {gameState.winner === 'player1' ? '¡VICTORIA!' : 'DERROTA'}
+            </h1>
+            <p className="text-2xl text-primary">
+              {gameState.winner === 'player1' 
+                ? 'Has ganado la Guerra de Cybertron'
+                : 'La IA ha conquistado Cybertron'}
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Index;
