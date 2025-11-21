@@ -1,1664 +1,642 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Transformers: Battle for Control</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #581c87 50%, #0f172a 100%);
-            min-height: 100vh;
-            color: white;
-            overflow-x: hidden;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        /* Faction Selection */
-        .faction-selection {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 40px 20px;
-        }
-
-        .faction-title {
-            text-align: center;
-            margin-bottom: 60px;
-        }
-
-        .faction-title h1 {
-            font-size: 5rem;
-            font-weight: bold;
-            background: linear-gradient(to right, #22d3ee, #3b82f6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 20px;
-        }
-
-        .faction-title h2 {
-            font-size: 2.5rem;
-            color: #d1d5db;
-            margin-bottom: 20px;
-        }
-
-        .faction-title p {
-            color: #9ca3af;
-            max-width: 600px;
-            margin: 0 auto;
-            line-height: 1.8;
-            font-size: 1.25rem;
-        }
-
-        /* Hero Image */
-        .hero-image {
-            width: 100%;
-            max-width: 800px;
-            height: 300px;
-            margin: 0 auto 40px;
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-            border: 3px solid rgba(34, 211, 238, 0.3);
-        }
-
-        .hero-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .faction-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 24px;
-            max-width: 1200px;
-            width: 100%;
-        }
-
-        .faction-card {
-            background: rgba(30, 41, 59, 0.5);
-            backdrop-filter: blur(10px);
-            border: 2px solid #475569;
-            border-radius: 12px;
-            padding: 30px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .faction-card:hover {
-            border-color: #22d3ee;
-            transform: scale(1.05);
-            box-shadow: 0 20px 60px rgba(34, 211, 238, 0.5);
-        }
-
-        .faction-icon {
-            font-size: 4rem;
-            text-align: center;
-            margin-bottom: 20px;
-            opacity: 0.6;
-            transition: opacity 0.3s;
-        }
-
-        .faction-card:hover .faction-icon {
-            opacity: 1;
-        }
-
-        .faction-card h3 {
-            font-size: 2rem;
-            text-align: center;
-            margin-bottom: 10px;
-            transition: color 0.3s;
-        }
-
-        .faction-card:hover h3 {
-            color: #22d3ee;
-        }
-
-        .faction-card p {
-            color: #9ca3af;
-            text-align: center;
-            font-size: 1.1rem;
-        }
-
-        .faction-image {
-            width: 100%;
-            height: 120px;
-            border-radius: 8px;
-            overflow: hidden;
-            margin-bottom: 15px;
-            opacity: 0.8;
-            transition: opacity 0.3s;
-        }
-
-        .faction-card:hover .faction-image {
-            opacity: 1;
-        }
-
-        .faction-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .faction-select-text {
-            text-align: center;
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #475569;
-            color: #22d3ee;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-
-        .faction-card:hover .faction-select-text {
-            opacity: 1;
-        }
-
-        /* Game Board */
-        .game-layout {
-            display: grid;
-            grid-template-columns: 1fr 2fr 1fr;
-            gap: 24px;
-            margin-bottom: 24px;
-        }
-
-        @media (max-width: 1024px) {
-            .game-layout {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        /* Character Panel */
-        .character-panel {
-            background: rgba(30, 41, 59, 0.5);
-            backdrop-filter: blur(10px);
-            border-radius: 12px;
-            padding: 20px;
-            border: 2px solid;
-        }
-
-        .character-panel.player {
-            border-color: #3b82f6;
-        }
-
-        .character-panel.ai {
-            border-color: #ef4444;
-        }
-
-        .character-panel h3 {
-            text-align: center;
-            font-size: 1.75rem;
-            margin-bottom: 20px;
-            font-weight: bold;
-        }
-
-        .character-card {
-            padding: 16px;
-            border-radius: 8px;
-            border: 2px solid;
-            margin-bottom: 12px;
-            transition: all 0.3s;
-        }
-
-        .character-card.player.alive {
-            background: rgba(59, 130, 246, 0.2);
-            border-color: #2563eb;
-            cursor: pointer; /* Clickable */
-        }
-        
-        .character-card.player.alive:hover {
-            background: rgba(59, 130, 246, 0.4);
-        }
-
-        .character-card.player.selected {
-            border-color: #22d3ee !important;
-            box-shadow: 0 0 15px #22d3ee;
-            transform: scale(1.03);
-        }
-
-        .character-card.ai.alive {
-            background: rgba(239, 68, 68, 0.2);
-            border-color: #dc2626;
-        }
-
-        .character-card.dead {
-            background: rgba(31, 41, 55, 0.2);
-            border-color: #374151;
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .character-header {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 12px;
-            font-size: 1.15rem;
-            font-weight: 600;
-        }
-
-        .stat-bar {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 8px;
-        }
-
-        .stat-icon {
-            width: 16px;
-            height: 16px;
-        }
-
-        .stat-progress {
-            flex: 1;
-            background: #1e293b;
-            border-radius: 9999px;
-            height: 16px;
-            overflow: hidden;
-        }
-
-        .stat-fill {
-            height: 100%;
-            transition: width 0.3s;
-        }
-
-        .stat-fill.health {
-            background: linear-gradient(to right, #ef4444, #dc2626);
-        }
-
-        .stat-fill.shield {
-            background: linear-gradient(to right, #06b6d4, #2563eb);
-        }
-
-        .stat-value {
-            font-size: 1rem;
-            min-width: 45px;
-            text-align: right;
-            font-weight: 600;
-        }
-
-        .character-position {
-            margin-top: 8px;
-            font-size: 0.9rem;
-            color: #9ca3af;
-        }
-
-        /* Board */
-        .board-container {
-            background: rgba(30, 41, 59, 0.5);
-            backdrop-filter: blur(10px);
-            border-radius: 12px;
-            padding: 20px;
-        }
-
-        .board-grid {
-            display: grid;
-            grid-template-columns: repeat(10, 1fr);
-            gap: 8px;
-        }
-
-        .board-cell {
-            aspect-ratio: 1;
-            border: 2px solid;
-            border-radius: 6px;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-            cursor: pointer;
-        }
-
-        .board-cell:hover {
-            transform: scale(1.1);
-        }
-
-        .board-cell.normal {
-            background: rgba(51, 65, 85, 0.5);
-            border-color: #475569;
-        }
-
-        .board-cell.control-point {
-            background: #ca8a04;
-            border-color: #facc15;
-        }
-
-        .board-cell.control-point.player {
-            background: #2563eb;
-            border-color: #3b82f6;
-        }
-
-        .board-cell.control-point.ai {
-            background: #dc2626;
-            border-color: #ef4444;
-        }
-
-        .board-cell.special {
-            background: rgba(147, 51, 234, 0.5);
-            border-color: #a855f7;
-        }
-
-        .board-cell.benefit {
-            background: rgba(22, 163, 74, 0.5);
-            border-color: #4ade80;
-        }
-
-        .cell-number {
-            position: absolute;
-            top: 2px;
-            right: 2px;
-            font-size: 0.65rem;
-            color: rgba(255, 255, 255, 0.4);
-        }
-
-        .cell-label {
-            position: absolute;
-            bottom: 2px;
-            font-size: 0.75rem;
-            font-weight: bold;
-        }
-
-        .cell-character {
-            position: absolute;
-            inset: 4px;
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-        }
-
-        .cell-character.player {
-            background: #3b82f6;
-        }
-
-        .cell-character.ai {
-            background: #ef4444;
-        }
-
-        .board-legend {
-            margin-top: 16px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 16px;
-            justify-content: center;
-            font-size: 1rem;
-            color: #d1d5db;
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .legend-box {
-            width: 16px;
-            height: 16px;
-            border-radius: 4px;
-            border: 2px solid;
-        }
-
-        /* Action Panel */
-        .action-panel {
-            background: rgba(30, 41, 59, 0.5);
-            backdrop-filter: blur(10px);
-            border-radius: 12px;
-            padding: 24px;
-            border: 2px solid #22d3ee;
-            max-width: 800px;
-            margin: 0 auto;
-        }
-
-        .turn-info {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-        }
-
-        .turn-info h3 {
-            font-size: 1.75rem;
-            font-weight: bold;
-        }
-
-        .turn-player {
-            color: #3b82f6;
-        }
-
-        .turn-ai {
-            color: #ef4444;
-        }
-
-        .message-box {
-            background: rgba(15, 23, 42, 0.5);
-            border-radius: 8px;
-            padding: 20px;
-            font-size: 1.15rem;
-            color: #d1d5db;
-            margin-bottom: 16px;
-            font-weight: 500;
-            line-height: 1.6;
-        }
-
-        .dice-results {
-            display: flex;
-            gap: 16px;
-            margin-bottom: 16px;
-        }
-
-        .dice-result {
-            flex: 1;
-            border-radius: 8px;
-            padding: 16px;
-            text-align: center;
-        }
-
-        .dice-result.movement {
-            background: linear-gradient(135deg, #2563eb, #7c3aed);
-        }
-
-        .dice-result.ability {
-            background: linear-gradient(135deg, #059669, #10b981);
-        }
-
-        .dice-result.ability.fail {
-            background: linear-gradient(135deg, #4b5563, #6b7280);
-        }
-
-        .dice-label {
-            font-size: 1.1rem;
-            color: #e5e7eb;
-            margin-bottom: 4px;
-            font-weight: 600;
-        }
-
-        .dice-value {
-            font-size: 3rem;
-            font-weight: bold;
-        }
-
-        .actions {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .btn {
-            padding: 18px 24px;
-            border-radius: 8px;
-            border: none;
-            cursor: pointer;
-            font-size: 1.15rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            transition: all 0.2s;
-            color: white;
-        }
-
-        .btn:hover:not(:disabled) {
-            transform: scale(1.05);
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .btn-primary {
-            background: linear-gradient(to right, #2563eb, #06b6d4);
-        }
-
-        .btn-primary:hover:not(:disabled) {
-            background: linear-gradient(to right, #1d4ed8, #0891b2);
-        }
-
-        .btn-capture {
-            background: linear-gradient(to right, #ca8a04, #ea580c);
-        }
-
-        .btn-capture:hover:not(:disabled) {
-            background: linear-gradient(to right, #a16207, #c2410c);
-        }
-
-        .btn-card {
-            background: linear-gradient(to right, #9333ea, #ec4899);
-            justify-content: space-between;
-        }
-
-        .btn-card:hover:not(:disabled) {
-            background: linear-gradient(to right, #7e22ce, #db2777);
-        }
-
-        .btn-secondary {
-            background: linear-gradient(to right, #4b5563, #475569);
-        }
-
-        .btn-secondary:hover:not(:disabled) {
-            background: linear-gradient(to right, #374151, #334155);
-        }
-
-        .benefit-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-        }
-
-        .btn-benefit {
-            background: linear-gradient(to right, #dc2626, #ec4899);
-        }
-
-        .btn-benefit:hover:not(:disabled) {
-            background: linear-gradient(to right, #b91c1c, #db2777);
-        }
-
-        .btn-shield {
-            background: linear-gradient(to right, #06b6d4, #2563eb);
-        }
-
-        .btn-shield:hover:not(:disabled) {
-            background: linear-gradient(to right, #0891b2, #1d4ed8);
-        }
-
-        .cards-section {
-            margin-bottom: 12px;
-        }
-
-        .cards-label {
-            font-size: 1.1rem;
-            color: #9ca3af;
-            margin-bottom: 8px;
-            font-weight: 600;
-        }
-
-        .card-info {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        /* Event */
-        .event-banner {
-            max-width: 800px;
-            margin: 24px auto 0;
-            background: rgba(234, 88, 12, 0.5);
-            border: 2px solid #ea580c;
-            border-radius: 12px;
-            padding: 16px;
-            text-align: center;
-        }
-
-        .event-title {
-            font-size: 1.5rem;
-            margin-bottom: 8px;
-            font-weight: bold;
-        }
-
-        .event-description {
-            font-size: 1.1rem;
-            color: #d1d5db;
-        }
-
-        /* Game Over */
-        .game-over-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(10px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            padding: 20px;
-        }
-
-        .game-over-modal {
-            background: #0f172a;
-            border: 2px solid #22d3ee;
-            border-radius: 16px;
-            padding: 40px;
-            max-width: 500px;
-            width: 100%;
-            text-align: center;
-            box-shadow: 0 25px 50px rgba(34, 211, 238, 0.5);
-        }
-
-        .game-over-emoji {
-            font-size: 5rem;
-            margin-bottom: 20px;
-        }
-
-        .game-over-title {
-            font-size: 3.5rem;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-
-        .game-over-title.victory {
-            background: linear-gradient(to right, #3b82f6, #06b6d4);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .game-over-title.defeat {
-            background: linear-gradient(to right, #ef4444, #ea580c);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .game-over-title.draw {
-            background: linear-gradient(to right, #6b7280, #475569);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .game-over-subtitle {
-            color: #9ca3af;
-            margin-bottom: 32px;
-            font-size: 1.25rem;
-        }
-
-        .hidden {
-            display: none !important;
-        }
-
-        /* Toast Notifications */
-        .toast-container {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 2000;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .toast {
-            background: #1e293b;
-            border: 2px solid;
-            border-radius: 8px;
-            padding: 16px;
-            min-width: 300px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-            animation: slideIn 0.3s ease;
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateX(400px);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-
-        .toast.success {
-            border-color: #10b981;
-        }
-
-        .toast.error {
-            border-color: #ef4444;
-        }
-
-        .toast.warning {
-            border-color: #f59e0b;
-        }
-    </style>
-</head>
-<body>
-    <div class="toast-container" id="toastContainer"></div>
-
-    <div id="factionSelection" class="faction-selection">
-        <div class="faction-title">
-            <h1>TRANSFORMERS</h1>
-            <h2>Battle for Control</h2>
-            <div class="hero-image">
-                <img src="https://static.wikia.nocookie.net/tranformerscybertron/images/d/dc/Cybertron_planet_by_JJasso.jpg/revision/latest?cb=20111004203912&path-prefix=es" alt="Robot Warriors Battle">
+import React, { useState, useEffect } from 'react';
+import { GameState, Faction, Character, Cell, WeaponCard } from './types/game';
+import { FactionSelection } from './components/FactionSelection';
+import { GameBoard } from './components/GameBoard';
+import { CharacterPanel } from './components/CharacterPanel';
+import { ActionPanel } from './components/ActionPanel';
+import { GameOverScreen } from './components/GameOverScreen';
+import {
+  createCharacter,
+  createBoard,
+  rollDice,
+  rollAbilityDice,
+  getRandomWeaponCard,
+  getRandomEvent,
+  applyDamage,
+  healCharacter,
+  addShield,
+  checkWinCondition,
+  calculateFinalWinner,
+  getCharacterAtPosition,
+  isAdjacentPosition,
+  FACTION_NAMES,
+} from './utils/gameLogic';
+import { calculateAIMove, getAIBenefitChoice } from './utils/aiLogic';
+import { toast, Toaster } from 'sonner@2.0.3';
+
+export default function App() {
+  const [gameState, setGameState] = useState<GameState>({
+    phase: 'faction-selection',
+    turn: 'player',
+    turnCount: 1,
+    playerFaction: null,
+    aiFaction: null,
+    playerCharacters: [],
+    aiCharacters: [],
+    board: [],
+    playerCards: [],
+    aiCards: [],
+    diceResult: null,
+    abilityDiceResult: null,
+    selectedCharacter: null,
+    actionPhase: 'select-character',
+    selectedAction: null,
+    winner: null,
+    eventActivated: false,
+    currentEvent: null,
+    message: 'Selecciona tu facción para comenzar',
+    benefitUsedThisTurn: false,
+    captureAttemptsThisTurn: 0,
+  });
+
+  // Handle faction selection
+  const handleFactionSelection = (faction: Faction) => {
+    const availableFactions: Faction[] = ['autobots', 'decepticons', 'primals', 'mercenarios'];
+    const aiFaction = availableFactions.filter(f => f !== faction)[Math.floor(Math.random() * 3)];
+    
+    const playerChars = [
+      createCharacter(faction, 'leader', 0),
+      createCharacter(faction, 'soldier', 1),
+    ];
+    
+    const aiChars = [
+      createCharacter(aiFaction, 'leader', 15),
+      createCharacter(aiFaction, 'soldier', 16),
+    ];
+    
+    const board = createBoard();
+    
+    setGameState({
+      ...gameState,
+      phase: 'game',
+      playerFaction: faction,
+      aiFaction,
+      playerCharacters: playerChars,
+      aiCharacters: aiChars,
+      board,
+      message: `¡La batalla comienza! ${FACTION_NAMES[faction]} vs ${FACTION_NAMES[aiFaction]}. Selecciona un personaje para mover.`,
+      actionPhase: 'select-character',
+      selectedAction: null,
+      benefitUsedThisTurn: false,
+      captureAttemptsThisTurn: 0,
+    });
+    
+    toast.success(`Has seleccionado ${FACTION_NAMES[faction]}`);
+  };
+
+  // Handle character selection
+  const handleSelectCharacter = (characterId: string) => {
+    const character = gameState.playerCharacters.find(c => c.id === characterId);
+    
+    if (!character || !character.isAlive) {
+      toast.error('Este personaje no está disponible');
+      return;
+    }
+    
+    setGameState({
+      ...gameState,
+      selectedCharacter: characterId,
+      actionPhase: 'choose-action',
+      message: `${character.name} seleccionado. ¿Deseas atacar o moverte?`,
+    });
+    
+    toast.info(`${character.name} seleccionado`);
+  };
+
+  // Handle action choice (attack or move)
+  const handleChooseAction = (action: 'attack' | 'move') => {
+    const character = gameState.playerCharacters.find(c => c.id === gameState.selectedCharacter);
+    
+    if (!character) return;
+    
+    if (action === 'attack') {
+      // Check if player has cards to attack
+      if (gameState.playerCards.length === 0) {
+        toast.error('No tienes cartas para atacar');
+        return;
+      }
+      
+      // Check if there are adjacent enemies
+      const adjacentEnemy = gameState.aiCharacters.find(ai =>
+        ai.isAlive && isAdjacentPosition(character.position, ai.position)
+      );
+      
+      if (!adjacentEnemy) {
+        toast.error('No hay enemigos adyacentes para atacar');
+        return;
+      }
+      
+      setGameState({
+        ...gameState,
+        selectedAction: 'attack',
+        actionPhase: 'action',
+        message: `${character.name} preparado para atacar. Selecciona una carta.`,
+      });
+      
+      toast.info('Modo ataque activado');
+    } else {
+      setGameState({
+        ...gameState,
+        selectedAction: 'move',
+        actionPhase: 'roll-dice',
+        message: `${character.name} listo para moverse. Lanza el dado.`,
+      });
+      
+      toast.info('Modo movimiento activado');
+    }
+  };
+
+  // Handle player rolling movement dice
+  const handleRollDice = () => {
+    if (gameState.actionPhase !== 'roll-dice') {
+      toast.error('Primero selecciona un personaje');
+      return;
+    }
+    
+    const selectedChar = gameState.playerCharacters.find(c => c.id === gameState.selectedCharacter);
+    
+    if (!selectedChar) {
+      toast.error('No hay personaje seleccionado');
+      return;
+    }
+    
+    const dice = rollDice();
+    
+    const newPosition = (selectedChar.position + dice) % 30;
+    const updatedChars = gameState.playerCharacters.map(c =>
+      c.id === selectedChar.id ? { ...c, position: newPosition } : c
+    );
+    
+    const cell = gameState.board[newPosition];
+    let message = `Moviste a ${selectedChar.name} a la casilla ${newPosition}`;
+    let updatedCards = [...gameState.playerCards];
+    
+    // Check cell type
+    if (cell.type === 'special') {
+      if (gameState.playerCards.length < 2) {
+        const newCard = getRandomWeaponCard();
+        updatedCards.push(newCard);
+        message += ` y obtuviste ${newCard.name}!`;
+        toast.success(`¡Carta obtenida: ${newCard.name}!`);
+      }
+    }
+    
+    setGameState({
+      ...gameState,
+      playerCharacters: updatedChars,
+      playerCards: updatedCards,
+      diceResult: dice,
+      selectedCharacter: selectedChar.id,
+      actionPhase: 'action',
+      message,
+    });
+  };
+
+  // Handle ability dice roll for capturing points
+  const handleRollAbilityDice = () => {
+    if (gameState.captureAttemptsThisTurn >= 2) {
+      toast.error('Ya intentaste capturar 2 veces este turno');
+      return;
+    }
+    
+    const result = rollAbilityDice();
+    const selectedChar = gameState.playerCharacters.find(c => c.id === gameState.selectedCharacter);
+    
+    if (!selectedChar) return;
+    
+    const cell = gameState.board[selectedChar.position];
+    const newAttempts = gameState.captureAttemptsThisTurn + 1;
+    
+    if (cell.type === 'controlPoint' && result === 'Transformer') {
+      const updatedBoard = gameState.board.map(c =>
+        c.id === cell.id ? { ...c, owner: 'player' as const } : c
+      );
+      
+      setGameState({
+        ...gameState,
+        board: updatedBoard,
+        abilityDiceResult: result,
+        captureAttemptsThisTurn: newAttempts,
+        message: `¡Capturaste el punto ${cell.controlPoint}!`,
+      });
+      
+      toast.success(`¡Punto ${cell.controlPoint} capturado!`);
+    } else {
+      setGameState({
+        ...gameState,
+        abilityDiceResult: result,
+        captureAttemptsThisTurn: newAttempts,
+        message: result === 'Transformer' 
+          ? 'Éxito, pero no hay punto que capturar' 
+          : `Fallo al intentar capturar (${newAttempts}/2 intentos)`,
+      });
+      
+      if (newAttempts >= 2) {
+        toast.warning('Alcanzaste el máximo de intentos de captura');
+      } else {
+        toast.info(`Intento ${newAttempts}/2`);
+      }
+    }
+  };
+
+  // Handle using weapon card
+  const handleUseCard = (cardIndex: number) => {
+    const card = gameState.playerCards[cardIndex];
+    const selectedChar = gameState.playerCharacters.find(c => c.id === gameState.selectedCharacter);
+    
+    if (!card || !selectedChar) return;
+    
+    // Find adjacent AI character to attack
+    const targetAI = gameState.aiCharacters.find(ai =>
+      ai.isAlive && isAdjacentPosition(selectedChar.position, ai.position)
+    );
+    
+    if (targetAI) {
+      const damagedAI = applyDamage(targetAI, card.damage, card.shieldPiercing);
+      const updatedAIChars = gameState.aiCharacters.map(c =>
+        c.id === targetAI.id ? damagedAI : c
+      );
+      
+      const updatedCards = gameState.playerCards.filter((_, i) => i !== cardIndex);
+      
+      // If attack was chosen, end the turn after attacking
+      const shouldEndPhase = gameState.selectedAction === 'attack';
+      
+      setGameState({
+        ...gameState,
+        aiCharacters: updatedAIChars,
+        playerCards: updatedCards,
+        actionPhase: shouldEndPhase ? 'end-turn' : 'action',
+        message: `¡Atacaste a ${targetAI.name} con ${card.name}! Daño: ${card.damage}${shouldEndPhase ? '. Turno terminado.' : ''}`,
+      });
+      
+      toast.success(`¡Ataque exitoso!${!damagedAI.isAlive ? ' Enemigo eliminado!' : ''}`);
+      
+      // If attack was the chosen action, auto end turn after a delay
+      if (shouldEndPhase) {
+        setTimeout(() => {
+          handleEndTurn();
+        }, 1500);
+      }
+    } else {
+      toast.error('No hay enemigos adyacentes para atacar');
+    }
+  };
+
+  // Handle benefit selection
+  const handleBenefit = (type: 'health' | 'shield') => {
+    if (gameState.benefitUsedThisTurn) {
+      toast.error('Ya usaste el beneficio este turno');
+      return;
+    }
+    
+    const selectedChar = gameState.playerCharacters.find(c => c.id === gameState.selectedCharacter);
+    
+    if (!selectedChar) return;
+    
+    const cell = gameState.board[selectedChar.position];
+    
+    if (cell.type === 'benefit') {
+      const updatedChar = type === 'health' ? healCharacter(selectedChar) : addShield(selectedChar);
+      const updatedChars = gameState.playerCharacters.map(c =>
+        c.id === selectedChar.id ? updatedChar : c
+      );
+      
+      setGameState({
+        ...gameState,
+        playerCharacters: updatedChars,
+        benefitUsedThisTurn: true,
+        message: `¡${selectedChar.name} recibió +1 ${type === 'health' ? 'Vida' : 'Escudo'}!`,
+      });
+      
+      toast.success(`+1 ${type === 'health' ? 'Vida' : 'Escudo'}`);
+    }
+  };
+
+  // Handle end turn
+  const handleEndTurn = () => {
+    // Check win condition
+    const winner = checkWinCondition(gameState.playerCharacters, gameState.aiCharacters, gameState.board);
+    
+    if (winner) {
+      setGameState({
+        ...gameState,
+        phase: 'game-over',
+        winner,
+      });
+      return;
+    }
+    
+    // Check if event should trigger
+    let eventActivated = gameState.eventActivated;
+    let currentEvent = gameState.currentEvent;
+    
+    if (gameState.turnCount >= 8 && !gameState.eventActivated) {
+      currentEvent = getRandomEvent();
+      eventActivated = true;
+      toast.warning(`¡Evento activado: ${currentEvent.name}!`);
+      
+      // Apply event effects
+      let updatedPlayerChars = [...gameState.playerCharacters];
+      let updatedAIChars = [...gameState.aiCharacters];
+      
+      if (currentEvent.type === 'global-damage') {
+        updatedPlayerChars = updatedPlayerChars.map(c => ({
+          ...c,
+          shield: Math.max(0, c.shield - 1),
+        }));
+        updatedAIChars = updatedAIChars.map(c => ({
+          ...c,
+          shield: Math.max(0, c.shield - 1),
+        }));
+      } else if (currentEvent.type === 'meteorite') {
+        updatedPlayerChars = updatedPlayerChars.map(c => ({
+          ...c,
+          health: Math.max(0, c.health - 1),
+          isAlive: c.health - 1 > 0,
+        }));
+        updatedAIChars = updatedAIChars.map(c => ({
+          ...c,
+          health: Math.max(0, c.health - 1),
+          isAlive: c.health - 1 > 0,
+        }));
+      } else if (currentEvent.type === 'energy-boost') {
+        updatedPlayerChars = updatedPlayerChars.map(c => healCharacter(c));
+        updatedAIChars = updatedAIChars.map(c => healCharacter(c));
+      }
+      
+      setGameState(prev => ({
+        ...prev,
+        playerCharacters: updatedPlayerChars,
+        aiCharacters: updatedAIChars,
+        eventActivated,
+        currentEvent,
+      }));
+    }
+    
+    // Switch to AI turn
+    setGameState(prev => ({
+      ...prev,
+      turn: 'ai',
+      turnCount: prev.turn === 'ai' ? prev.turnCount + 1 : prev.turnCount,
+      actionPhase: 'select-character',
+      diceResult: null,
+      abilityDiceResult: null,
+      selectedCharacter: null,
+      selectedAction: null,
+      benefitUsedThisTurn: false,
+      captureAttemptsThisTurn: 0,
+      message: 'Turno de la IA...',
+    }));
+  };
+
+  // AI Turn Logic
+  useEffect(() => {
+    if (gameState.turn === 'ai' && gameState.phase === 'game') {
+      const timeout = setTimeout(() => {
+        executeAITurn();
+      }, 1500);
+      
+      return () => clearTimeout(timeout);
+    }
+  }, [gameState.turn, gameState.phase]);
+
+  const executeAITurn = () => {
+    const aliveAIChars = gameState.aiCharacters.filter(c => c.isAlive);
+    
+    if (aliveAIChars.length === 0) {
+      handleEndTurn();
+      return;
+    }
+    
+    // Select character (prioritize lowest health)
+    const selectedChar = aliveAIChars.sort((a, b) => a.health - b.health)[0];
+    
+    // Roll dice and move
+    const dice = rollDice();
+    const newPosition = (selectedChar.position + dice) % 30;
+    
+    let updatedAIChars = gameState.aiCharacters.map(c =>
+      c.id === selectedChar.id ? { ...c, position: newPosition } : c
+    );
+    
+    let updatedPlayerChars = [...gameState.playerCharacters];
+    let updatedBoard = [...gameState.board];
+    let updatedAICards = [...gameState.aiCards];
+    let message = `IA movió ${selectedChar.name} a la casilla ${newPosition}`;
+    
+    const cell = gameState.board[newPosition];
+    
+    // Check for special cell
+    if (cell.type === 'special' && gameState.aiCards.length < 2) {
+      const newCard = getRandomWeaponCard();
+      updatedAICards.push(newCard);
+      message += ' y obtuvo un arma';
+    }
+    
+    // Check for benefit
+    if (cell.type === 'benefit') {
+      const benefitType = getAIBenefitChoice(selectedChar);
+      const updatedChar = benefitType === 'health' 
+        ? healCharacter(selectedChar) 
+        : addShield(selectedChar);
+      updatedAIChars = updatedAIChars.map(c =>
+        c.id === selectedChar.id ? updatedChar : c
+      );
+      message += ` y recibió +1 ${benefitType === 'health' ? 'Vida' : 'Escudo'}`;
+    }
+    
+    // Check for adjacent player to attack
+    const adjacentPlayer = gameState.playerCharacters.find(p =>
+      p.isAlive && isAdjacentPosition(newPosition, p.position)
+    );
+    
+    if (adjacentPlayer && updatedAICards.length > 0) {
+      const card = updatedAICards[0];
+      const damagedPlayer = applyDamage(adjacentPlayer, card.damage, card.shieldPiercing);
+      updatedPlayerChars = updatedPlayerChars.map(c =>
+        c.id === adjacentPlayer.id ? damagedPlayer : c
+      );
+      updatedAICards = updatedAICards.slice(1);
+      message += ` y atacó a ${adjacentPlayer.name}!`;
+      toast.error(`¡La IA te atacó con ${card.name}!`);
+    }
+    
+    // Try to capture control point
+    if (cell.type === 'controlPoint' && cell.owner !== 'ai') {
+      const abilityResult = rollAbilityDice();
+      if (abilityResult === 'Transformer') {
+        updatedBoard = gameState.board.map(c =>
+          c.id === cell.id ? { ...c, owner: 'ai' as const } : c
+        );
+        message += ` y capturó el punto ${cell.controlPoint}!`;
+        toast.warning(`¡La IA capturó el punto ${cell.controlPoint}!`);
+      }
+    }
+    
+    setGameState(prev => ({
+      ...prev,
+      aiCharacters: updatedAIChars,
+      playerCharacters: updatedPlayerChars,
+      board: updatedBoard,
+      aiCards: updatedAICards,
+      message,
+      diceResult: dice,
+    }));
+    
+    // End AI turn
+    setTimeout(() => {
+      const winner = checkWinCondition(updatedPlayerChars, updatedAIChars, updatedBoard);
+      
+      if (winner) {
+        setGameState(prev => ({
+          ...prev,
+          phase: 'game-over',
+          winner,
+        }));
+      } else {
+        setGameState(prev => ({
+          ...prev,
+          turn: 'player',
+          turnCount: prev.turnCount + 1,
+          actionPhase: 'select-character',
+          diceResult: null,
+          abilityDiceResult: null,
+          selectedCharacter: null,
+          selectedAction: null,
+          benefitUsedThisTurn: false,
+          captureAttemptsThisTurn: 0,
+          message: 'Tu turno. Selecciona un personaje.',
+        }));
+      }
+    }, 2000);
+  };
+
+  // Handle restart
+  const handleRestart = () => {
+    setGameState({
+      phase: 'faction-selection',
+      turn: 'player',
+      turnCount: 1,
+      playerFaction: null,
+      aiFaction: null,
+      playerCharacters: [],
+      aiCharacters: [],
+      board: [],
+      playerCards: [],
+      aiCards: [],
+      diceResult: null,
+      abilityDiceResult: null,
+      selectedCharacter: null,
+      actionPhase: 'select-character',
+      selectedAction: null,
+      winner: null,
+      eventActivated: false,
+      currentEvent: null,
+      message: 'Selecciona tu facción para comenzar',
+      benefitUsedThisTurn: false,
+      captureAttemptsThisTurn: 0,
+    });
+  };
+
+  // Check conditions for actions
+  const canRollDice = gameState.turn === 'player' && 
+    gameState.actionPhase === 'roll-dice' &&
+    gameState.diceResult === null &&
+    gameState.selectedCharacter !== null;
+  
+  const canUseCard = gameState.turn === 'player' && 
+    gameState.actionPhase === 'action' &&
+    gameState.playerCards.length > 0;
+  
+  const selectedChar = gameState.playerCharacters.find(c => c.id === gameState.selectedCharacter);
+  const currentCell = selectedChar ? gameState.board[selectedChar.position] : null;
+  
+  const canCapture = gameState.turn === 'player' &&
+    gameState.actionPhase === 'action' &&
+    currentCell?.type === 'controlPoint' &&
+    currentCell.owner !== 'player' &&
+    gameState.captureAttemptsThisTurn < 2;
+  
+  const canBenefit = gameState.turn === 'player' &&
+    gameState.actionPhase === 'action' &&
+    currentCell?.type === 'benefit' &&
+    !gameState.benefitUsedThisTurn;
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
+      <Toaster position="top-center" richColors />
+      
+      {gameState.phase === 'faction-selection' && (
+        <FactionSelection onSelectFaction={handleFactionSelection} />
+      )}
+      
+      {gameState.phase === 'game' && (
+        <div className="container mx-auto p-4">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
+            <div className="lg:col-span-1">
+              <CharacterPanel
+                characters={gameState.playerCharacters}
+                title={`${gameState.playerFaction ? FACTION_NAMES[gameState.playerFaction] : 'Jugador'}`}
+                isPlayer={true}
+              />
             </div>
-            <p>Elige tu facción y lucha por el control de los tres puntos estratégicos. ¡El destino de Cybertron está en tus manos!</p>
+            
+            <div className="lg:col-span-2">
+              <GameBoard
+                board={gameState.board}
+                playerCharacters={gameState.playerCharacters}
+                aiCharacters={gameState.aiCharacters}
+              />
+            </div>
+            
+            <div className="lg:col-span-1">
+              <CharacterPanel
+                characters={gameState.aiCharacters}
+                title={`${gameState.aiFaction ? FACTION_NAMES[gameState.aiFaction] : 'IA'}`}
+                isPlayer={false}
+              />
+            </div>
+          </div>
+          
+          <div className="max-w-2xl mx-auto">
+            <ActionPanel
+              turn={gameState.turn}
+              turnCount={gameState.turnCount}
+              actionPhase={gameState.actionPhase}
+              diceResult={gameState.diceResult}
+              abilityDiceResult={gameState.abilityDiceResult}
+              playerCards={gameState.playerCards}
+              playerCharacters={gameState.playerCharacters}
+              selectedCharacter={gameState.selectedCharacter}
+              message={gameState.message}
+              onSelectCharacter={handleSelectCharacter}
+              onChooseAction={handleChooseAction}
+              onRollDice={handleRollDice}
+              onRollAbilityDice={handleRollAbilityDice}
+              onUseCard={handleUseCard}
+              onEndTurn={handleEndTurn}
+              onBenefit={handleBenefit}
+              canRollDice={canRollDice}
+              canUseCard={canUseCard}
+              canCapture={canCapture}
+              canBenefit={canBenefit}
+              captureAttemptsThisTurn={gameState.captureAttemptsThisTurn}
+            />
+          </div>
+          
+          {gameState.currentEvent && (
+            <div className="mt-6 max-w-2xl mx-auto bg-orange-900/50 border-2 border-orange-500 rounded-xl p-4 text-center">
+              <div className="text-xl mb-2">⚡ Evento: {gameState.currentEvent.name}</div>
+              <div className="text-sm text-gray-300">{gameState.currentEvent.description}</div>
+            </div>
+          )}
         </div>
-        
-        <div class="faction-grid">
-            <div class="faction-card" onclick="selectFaction('autobots')">
-                <div class="faction-image">
-                    <img src="https://static.wikia.nocookie.net/michaelbaystransformers/images/c/ca/Movie_Autobot.jpg/revision/latest?cb=20130217081258" alt="Autobots" width="50" height="50">
-                </div>
-                <div class="faction-icon">🛡️</div>
-                <h3>Autobots</h3>
-                <p>Defensores de la libertad y la justicia</p>
-                <div class="faction-select-text">Seleccionar →</div>
-            </div>
-            
-            <div class="faction-card" onclick="selectFaction('decepticons')">
-                <div class="faction-image">
-                    <img src="https://static.wikia.nocookie.net/transformers-knightversebeeverse/images/e/e5/Decepticon_logo%2C_pinterest.png/revision/latest?cb=20230711044930&path-prefix=es" alt="Decepticons" width="50" height="50">
-                </div>
-                <div class="faction-icon">💀</div>
-                <h3>Decepticons</h3>
-                <p>Conquistadores despiadados</p>
-                <div class="faction-select-text">Seleccionar →</div>
-            </div>
-            
-            <div class="faction-card" onclick="selectFaction('primals')">
-                <div class="faction-image">
-                    <img src="https://static.wikia.nocookie.net/transformers-knightversebeeverse/images/4/4d/Maximals.png/revision/latest?cb=20230806185932&path-prefix=es" alt="Primals" width="50" height="50">
-                </div>
-                <div class="faction-icon">🔥</div>
-                <h3>Primals</h3>
-                <p>Guerreros orgánicos ancestrales</p>
-                <div class="faction-select-text">Seleccionar →</div>
-            </div>
-            
-            <div class="faction-card" onclick="selectFaction('mercenarios')">
-                <div class="faction-image">
-                    <img src="https://static.wikia.nocookie.net/transformers-knightversebeeverse/images/c/cf/Mercenarioslogo.png/revision/latest?cb=20250410002942&path-prefix=es" alt="Mercenarios" width="50" height="50">
-                </div>
-                <div class="faction-icon">⚡</div>
-                <h3>Mercenarios</h3>
-                <p>Luchadores por el mejor postor</p>
-                <div class="faction-select-text">Seleccionar →</div>
-            </div>
-        </div>
+      )}
+      
+      {gameState.phase === 'game-over' && gameState.winner && (
+        <GameOverScreen winner={gameState.winner} onRestart={handleRestart} />
+      )}
     </div>
-
-    <div id="gameScreen" class="container hidden">
-        <div class="game-layout">
-            <div id="playerPanel" class="character-panel player">
-                <h3 id="playerTitle">Jugador</h3>
-                <div id="playerCharacters"></div>
-            </div>
-            
-            <div class="board-container">
-                <div class="board-grid" id="boardGrid"></div>
-                <div class="board-legend">
-                    <div class="legend-item">
-                        <div class="legend-box" style="background: #ca8a04; border-color: #facc15;"></div>
-                        <span>Punto de Control</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-box" style="background: rgba(147, 51, 234, 0.5); border-color: #a855f7;"></div>
-                        <span>Casilla Especial (Arma)</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-box" style="background: rgba(22, 163, 74, 0.5); border-color: #4ade80;"></div>
-                        <span>Beneficio</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-box" style="background: #3b82f6;"></div>
-                        <span>Jugador</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-box" style="background: #ef4444;"></div>
-                        <span>IA</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div id="aiPanel" class="character-panel ai">
-                <h3 id="aiTitle">IA</h3>
-                <div id="aiCharacters"></div>
-            </div>
-        </div>
-        
-        <div class="action-panel">
-            <div class="turn-info">
-                <h3>Turno: <span id="turnIndicator">Jugador</span></h3>
-                <div>Ronda: <span id="turnCount">1</span></div>
-            </div>
-            
-            <div class="message-box" id="messageBox">
-                Bienvenido a la batalla
-            </div>
-            
-            <div id="diceResults" class="dice-results hidden"></div>
-            
-            <div class="actions" id="actionsContainer"></div>
-        </div>
-        
-        <div id="eventBanner" class="event-banner hidden">
-            <div class="event-title" id="eventTitle"></div>
-            <div class="event-description" id="eventDescription"></div>
-        </div>
-    </div>
-
-    <div id="gameOverScreen" class="game-over-overlay hidden">
-        <div class="game-over-modal">
-            <div class="game-over-emoji" id="gameOverEmoji">🏆</div>
-            <div class="game-over-title" id="gameOverTitle">¡VICTORIA!</div>
-            <p class="game-over-subtitle" id="gameOverSubtitle">Has dominado el campo de batalla</p>
-            <button class="btn btn-primary" onclick="restartGame()">
-                ↻ Jugar de Nuevo
-            </button>
-        </div>
-    </div>
-
-    <script>
-        // Game State
-        const FACTION_NAMES = {
-            autobots: 'Autobots',
-            decepticons: 'Decepticons',
-            primals: 'Primals',
-            mercenarios: 'Mercenarios'
-        };
-
-        const WEAPON_CARDS = [
-            { id: 'blaster', name: 'Blaster', damage: 2, shieldPiercing: false },
-            { id: 'missile', name: 'Misil', damage: 3, shieldPiercing: true },
-            { id: 'energon-axe', name: 'Hacha Energon', damage: 2, shieldPiercing: false },
-            { id: 'plasma-cannon', name: 'Cañón de Plasma', damage: 4, shieldPiercing: true },
-        ];
-
-        const EVENTS = [
-            { type: 'global-damage', name: 'Tormenta Solar', description: 'Todos los personajes pierden 1 punto de escudo' },
-            { type: 'shield-blocked', name: 'Campo de Interferencia', description: 'Los escudos no funcionan este turno' },
-            { type: 'meteorite', name: 'Lluvia de Meteoritos', description: 'Todos los personajes pierden 1 punto de vida' },
-            { type: 'energy-boost', name: 'Energon Puro', description: 'Todos los personajes recuperan 1 punto de vida' },
-        ];
-
-        let gameState = {
-            phase: 'faction-selection',
-            turn: 'player',
-            turnCount: 1,
-            playerFaction: null,
-            aiFaction: null,
-            playerCharacters: [],
-            aiCharacters: [],
-            board: [],
-            playerCards: [],
-            aiCards: [],
-            diceResult: null,
-            abilityDiceResult: null,
-            selectedCharacter: null,
-            actionPhase: 'select-character', // Fases: 'select-character', 'choice-attack-or-move', 'roll-dice', 'attack', 'action', 'end-turn-only'
-            winner: null,
-            eventActivated: false,
-            currentEvent: null,
-            message: 'Selecciona tu facción para comenzar',
-            benefitUsedThisTurn: false,
-            captureAttemptsThisTurn: 0
-        };
-
-        // Utility Functions
-        function createCharacter(faction, type, startPosition) {
-            const isLeader = type === 'leader';
-            const factionName = FACTION_NAMES[faction];
-            
-            return {
-                id: `${faction}-${type}`,
-                name: isLeader ? `Líder ${factionName}` : `Soldado ${factionName}`,
-                type,
-                faction,
-                shield: isLeader ? 5 : 4,
-                maxShield: isLeader ? 5 : 4,
-                health: isLeader ? 4 : 3,
-                maxHealth: isLeader ? 4 : 3,
-                position: startPosition,
-                isAlive: true,
-            };
-        }
-
-        function createBoard() {
-            const cells = [];
-            for (let i = 0; i < 30; i++) {
-                let cell = { id: i, type: 'normal' };
-                
-                if (i === 10) {
-                    cell = { id: i, type: 'controlPoint', controlPoint: 'A', owner: null };
-                } else if (i === 15) {
-                    cell = { id: i, type: 'controlPoint', controlPoint: 'B', owner: null };
-                } else if (i === 20) {
-                    cell = { id: i, type: 'controlPoint', controlPoint: 'C', owner: null };
-                } else if ([5, 12, 18, 25].includes(i)) {
-                    cell = { id: i, type: 'special' };
-                } else if ([3, 8, 13, 17, 22, 27].includes(i)) {
-                    cell = { id: i, type: 'benefit' };
-                }
-                
-                cells.push(cell);
-            }
-            return cells;
-        }
-
-        function rollDice() {
-            return Math.floor(Math.random() * 6) + 1;
-        }
-
-        function rollAbilityDice() {
-            const outcomes = ['Transformer', 'Transformer', 'Fallo', 'Fallo', 'Fallo', 'Fallo'];
-            return outcomes[Math.floor(Math.random() * outcomes.length)];
-        }
-
-        function getRandomWeaponCard() {
-            const randomIndex = Math.floor(Math.random() * WEAPON_CARDS.length);
-            return { ...WEAPON_CARDS[randomIndex], id: `${WEAPON_CARDS[randomIndex].id}-${Date.now()}` };
-        }
-
-        function getRandomEvent() {
-            const randomIndex = Math.floor(Math.random() * EVENTS.length);
-            return EVENTS[randomIndex];
-        }
-
-        function applyDamage(character, damage, shieldPiercing) {
-            let newShield = character.shield;
-            let newHealth = character.health;
-            
-            if (shieldPiercing) {
-                newHealth -= damage;
-            } else {
-                if (newShield > 0) {
-                    const shieldDamage = Math.min(damage, newShield);
-                    newShield -= shieldDamage;
-                    const remainingDamage = damage - shieldDamage;
-                    if (remainingDamage > 0) {
-                        newHealth -= remainingDamage;
-                    }
-                } else {
-                    newHealth -= damage;
-                }
-            }
-            
-            newHealth = Math.max(0, newHealth);
-            newShield = Math.max(0, newShield);
-            
-            return {
-                ...character,
-                shield: newShield,
-                health: newHealth,
-                isAlive: newHealth > 0,
-            };
-        }
-
-        function healCharacter(character) {
-            return {
-                ...character,
-                health: Math.min(character.health + 1, character.maxHealth),
-            };
-        }
-
-        function addShield(character) {
-            return {
-                ...character,
-                shield: Math.min(character.shield + 1, character.maxShield),
-            };
-        }
-
-        function isAdjacentPosition(pos1, pos2) {
-            return Math.abs(pos1 - pos2) === 1 || (pos1 === 0 && pos2 === 29) || (pos1 === 29 && pos2 === 0);
-        }
-        
-        function findAdjacentAI(position) {
-            return gameState.aiCharacters.find(ai =>
-                ai.isAlive && isAdjacentPosition(position, ai.position)
-            );
-        }
-
-        function checkWinCondition() {
-            const playerAlive = gameState.playerCharacters.some(c => c.isAlive);
-            const aiAlive = gameState.aiCharacters.some(c => c.isAlive);
-            
-            if (!playerAlive && !aiAlive) return 'draw';
-            if (!playerAlive) return 'ai';
-            if (!aiAlive) return 'player';
-            
-            const controlPoints = gameState.board.filter(cell => cell.type === 'controlPoint');
-            const playerControlled = controlPoints.filter(cell => cell.owner === 'player').length;
-            const aiControlled = controlPoints.filter(cell => cell.owner === 'ai').length;
-            
-            if (playerControlled === 3) return 'player';
-            if (aiControlled === 3) return 'ai';
-            
-            return null;
-        }
-
-        // Toast Notifications
-        function showToast(message, type = 'success') {
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            toast.textContent = message;
-            container.appendChild(toast);
-            
-            setTimeout(() => {
-                toast.remove();
-            }, 3000);
-        }
-
-        // Faction Selection
-        function selectFaction(faction) {
-            const availableFactions = ['autobots', 'decepticons', 'primals', 'mercenarios'];
-            const aiFaction = availableFactions.filter(f => f !== faction)[Math.floor(Math.random() * 3)];
-            
-            gameState.playerFaction = faction;
-            gameState.aiFaction = aiFaction;
-            gameState.playerCharacters = [
-                createCharacter(faction, 'leader', 0),
-                createCharacter(faction, 'soldier', 1),
-            ];
-            gameState.aiCharacters = [
-                createCharacter(aiFaction, 'leader', 15),
-                createCharacter(aiFaction, 'soldier', 16),
-            ];
-            gameState.board = createBoard();
-            gameState.phase = 'game';
-            gameState.message = `¡La batalla comienza! ${FACTION_NAMES[faction]} vs ${FACTION_NAMES[aiFaction]}. Selecciona un personaje para mover.`;
-            gameState.benefitUsedThisTurn = false;
-            gameState.captureAttemptsThisTurn = 0;
-            gameState.actionPhase = 'select-character'; 
-            
-            document.getElementById('factionSelection').classList.add('hidden');
-            document.getElementById('gameScreen').classList.remove('hidden');
-            
-            showToast(`Has seleccionado ${FACTION_NAMES[faction]}`);
-            
-            render();
-        }
-
-        // Render Functions
-        function renderCharacterPanel(characters, elementId, isPlayer) {
-            const container = document.getElementById(elementId);
-            container.innerHTML = characters.map(char => {
-                const isSelected = char.id === gameState.selectedCharacter;
-                const canSelect = isPlayer && 
-                                  char.isAlive && 
-                                  (gameState.actionPhase === 'select-character' || 
-                                   (gameState.actionPhase === 'choice-attack-or-move' && !isSelected) ||
-                                   (gameState.actionPhase === 'roll-dice' && !isSelected)
-                                  );
-                
-                // Opción para deseleccionar si se hace clic en el ya seleccionado
-                const clickAction = canSelect ? `onclick="handleSelectCharacter('${char.id}')"` : 
-                                    (isPlayer && isSelected && gameState.actionPhase !== 'select-character' && gameState.actionPhase !== 'action' && gameState.actionPhase !== 'end-turn-only') ? `onclick="handleSelectCharacter(null)"` : '';
-
-                return `
-                <div 
-                    class="character-card ${isPlayer ? 'player' : 'ai'} ${char.isAlive ? 'alive' : 'dead'} ${isSelected ? 'selected' : ''}"
-                    ${clickAction}
-                >
-                <div class="character-header">
-                        <span>${char.type === 'leader' ? '👑' : '⚔️'}</span>
-                        <span>${char.name}</span>
-                        ${!char.isAlive ? '<span>💀</span>' : ''}
-                    </div>
-                    <div class="stat-bar">
-                        <span class="stat-icon">❤️</span>
-                        <div class="stat-progress">
-                            <div class="stat-fill health" style="width: ${(char.health / char.maxHealth) * 100}%"></div>
-                        </div>
-                        <span class="stat-value">${char.health}/${char.maxHealth}</span>
-                    </div>
-                    <div class="stat-bar">
-                        <span class="stat-icon">🛡️</span>
-                        <div class="stat-progress">
-                            <div class="stat-fill shield" style="width: ${(char.shield / char.maxShield) * 100}%"></div>
-                        </div>
-                        <span class="stat-value">${char.shield}/${char.maxShield}</span>
-                    </div>
-                    <div class="character-position">Posición: ${char.position}</div>
-                </div>
-            `;
-            }).join('');
-        }
-
-        function renderBoard() {
-            const container = document.getElementById('boardGrid');
-            
-            container.innerHTML = gameState.board.map(cell => {
-                let cellClass = `board-cell ${cell.type}`;
-                if (cell.type === 'controlPoint' && cell.owner) {
-                    cellClass += ` ${cell.owner}`;
-                }
-                
-                const playerChar = gameState.playerCharacters.find(c => c.position === cell.id && c.isAlive);
-                const aiChar = gameState.aiCharacters.find(c => c.position === cell.id && c.isAlive);
-                
-                let characterHTML = '';
-                if (playerChar) {
-                    characterHTML = `<div class="cell-character player">${playerChar.type === 'leader' ? '👑' : '⚔️'}</div>`;
-                } else if (aiChar) {
-                    characterHTML = `<div class="cell-character ai">${aiChar.type === 'leader' ? '👑' : '⚔️'}</div>`;
-                }
-                
-                let labelHTML = '';
-                if (cell.type === 'controlPoint') {
-                    labelHTML = `<div class="cell-label">${cell.controlPoint}</div>`;
-                }
-                
-                return `
-                    <div class="${cellClass}">
-                        <div class="cell-number">${cell.id}</div>
-                        ${labelHTML}
-                        ${characterHTML}
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function renderActions() {
-            const container = document.getElementById('actionsContainer');
-            
-            if (gameState.turn === 'ai') {
-                container.innerHTML = '<div style="text-align: center; color: #9ca3af;">La IA está pensando...</div>';
-                return;
-            }
-            
-            const selectedChar = gameState.playerCharacters.find(c => c.id === gameState.selectedCharacter);
-            const currentCell = selectedChar ? gameState.board[selectedChar.position] : null;
-            
-            // --- LÓGICA DE 'CAN' MODIFICADA ---
-            const canCapture = gameState.actionPhase === 'action' && 
-                              currentCell?.type === 'controlPoint' && 
-                              currentCell.owner !== 'player' &&
-                              gameState.captureAttemptsThisTurn < 2; // Límite de 2 intentos
-            
-            const canBenefit = gameState.actionPhase === 'action' && 
-                               currentCell?.type === 'benefit' &&
-                               !gameState.benefitUsedThisTurn; // Límite de 1 uso
-            
-            let html = '';
-
-            switch (gameState.actionPhase) {
-                case 'select-character':
-                    html += `<button class="btn btn-primary" disabled>Selecciona un personaje</button>`;
-                    break;
-                
-                case 'choice-attack-or-move':
-                    html += `<button class="btn btn-card" onclick="handleAttackChoice()">⚔️ Atacar (Usar Carta)</button>`;
-                    html += `<button class="btn btn-primary" onclick="handleMoveChoice()">🎲 Mover (Lanzar Dado)</button>`;
-                    html += `<button class="btn btn-secondary" onclick="handleSelectCharacter(null)">Cancelar</button>`;
-                    break;
-                
-                case 'roll-dice':
-                    html += `<button class="btn btn-primary" onclick="handleRollDice()">🎲 Lanzar Dado de Movimiento</button>`;
-                    html += `<button class="btn btn-secondary" onclick="handleSelectCharacter(null)">Cancelar</button>`;
-                    break;
-                
-                case 'attack':
-                    html += '<div class="cards-section"><div class="cards-label">Selecciona un arma:</div>';
-                    if (gameState.playerCards.length > 0) {
-                        gameState.playerCards.forEach((card, index) => {
-                            html += `
-                                <button class="btn btn-card" onclick="handleUseCard(${index})">
-                                    <div class="card-info"><span>⚔️</span><span>${card.name}</span></div>
-                                    <div class="card-info"><span>Daño: ${card.damage}</span>${card.shieldPiercing ? '<span>✨</span>' : ''}</div>
-                                </button>
-                            `;
-                        });
-                    } else {
-                        html += '<p style="text-align: center; color: #9ca3af;">No tienes cartas.</p>';
-                    }
-                    html += '</div>';
-                    html += `<button class="btn btn-secondary" onclick="handleSelectCharacter(null)">Cancelar Ataque</button>`;
-                    break;
-                
-                case 'action':
-                    html += `<p style="text-align: center; margin-bottom: 12px; color: #9ca3af;">Te has movido. Puedes usar una acción de casilla.</p>`;
-                    if (canCapture) {
-                        html += `<button class="btn btn-capture" onclick="handleRollAbilityDice()">🎯 Intentar Capturar Punto (${gameState.captureAttemptsThisTurn}/2)</button>`;
-                    }
-                    if (canBenefit) {
-                        html += `
-                            <div class="benefit-grid">
-                                <button class="btn btn-benefit" onclick="handleBenefit('health')">❤️ +1 Vida</button>
-                                <button class="btn btn-shield" onclick="handleBenefit('shield')">🛡️ +1 Escudo</button>
-                            </div>
-                        `;
-                    }
-                    html += `<button class="btn btn-secondary" onclick="handleEndTurn()">Terminar Turno</button>`;
-                    break;
-                
-                case 'end-turn-only':
-                    html += `<p style="text-align: center; margin-bottom: 12px; color: #9ca3af;">Has completado tu ataque.</p>`;
-                    html += `<button class="btn btn-secondary" onclick="handleEndTurn()">Terminar Turno</button>`;
-                    break;
-            }
-            
-            container.innerHTML = html;
-        }
-
-        function renderDiceResults() {
-            const container = document.getElementById('diceResults');
-            
-            if (gameState.diceResult === null && gameState.abilityDiceResult === null) {
-                container.classList.add('hidden');
-                return;
-            }
-            
-            container.classList.remove('hidden');
-            let html = '';
-            
-            if (gameState.diceResult !== null) {
-                html += `
-                    <div class="dice-result movement">
-                        <div class="dice-label">Dado de Movimiento</div>
-                        <div class="dice-value">${gameState.diceResult}</div>
-                    </div>
-                `;
-            }
-            
-            if (gameState.abilityDiceResult !== null) {
-                const isSuccess = gameState.abilityDiceResult === 'Transformer';
-                html += `
-                    <div class="dice-result ability ${isSuccess ? '' : 'fail'}">
-                        <div class="dice-label">Dado de Habilidad</div>
-                        <div class="dice-value">${gameState.abilityDiceResult}</div>
-                    </div>
-                `;
-            }
-            
-            container.innerHTML = html;
-        }
-
-        function render() {
-            if (gameState.phase !== 'game') return;
-            
-            document.getElementById('playerTitle').textContent = FACTION_NAMES[gameState.playerFaction];
-            document.getElementById('aiTitle').textContent = FACTION_NAMES[gameState.aiFaction];
-            document.getElementById('turnIndicator').textContent = gameState.turn === 'player' ? 'Jugador' : 'IA';
-            document.getElementById('turnIndicator').className = gameState.turn === 'player' ? 'turn-player' : 'turn-ai';
-            document.getElementById('turnCount').textContent = gameState.turnCount;
-            document.getElementById('messageBox').textContent = gameState.message;
-            
-            renderCharacterPanel(gameState.playerCharacters, 'playerCharacters', true);
-            renderCharacterPanel(gameState.aiCharacters, 'aiCharacters', false);
-            renderBoard();
-            renderActions();
-            renderDiceResults();
-            
-            if (gameState.currentEvent) {
-                document.getElementById('eventBanner').classList.remove('hidden');
-                document.getElementById('eventTitle').textContent = `⚡ Evento: ${gameState.currentEvent.name}`;
-                document.getElementById('eventDescription').textContent = gameState.currentEvent.description;
-            }
-        }
-        
-        function handleSelectCharacter(characterId) {
-            // Permitir "deseleccionar"
-            if (characterId === null) {
-                gameState.selectedCharacter = null;
-                gameState.actionPhase = 'select-character';
-                gameState.message = 'Selecciona un personaje para mover.';
-                render();
-                return;
-            }
-
-            if (gameState.turn !== 'player') return;
-
-            const character = gameState.playerCharacters.find(c => c.id === characterId);
-            if (!character || !character.isAlive) {
-                showToast('Este personaje no está disponible', 'error');
-                return;
-            }
-            
-            gameState.selectedCharacter = characterId;
-
-            const adjacentAI = findAdjacentAI(character.position);
-            if (adjacentAI && gameState.playerCards.length > 0) {
-                gameState.actionPhase = 'choice-attack-or-move';
-                gameState.message = `${character.name} está adyacente a ${adjacentAI.name}. ¿Quieres atacar o moverte?`;
-            } else {
-                gameState.actionPhase = 'roll-dice';
-                gameState.message = `${character.name} seleccionado. Lanza el dado para mover.`;
-            }
-            
-            showToast(`${character.name} seleccionado`);
-            render();
-        }
-
-        function handleAttackChoice() {
-            if (gameState.actionPhase !== 'choice-attack-or-move') return;
-            gameState.actionPhase = 'attack';
-            gameState.message = 'Selecciona una carta de arma para atacar.';
-            render();
-        }
-
-        function handleMoveChoice() {
-            if (gameState.actionPhase !== 'choice-attack-or-move') return;
-            gameState.actionPhase = 'roll-dice';
-            gameState.message = 'Lanza el dado para mover.';
-            render();
-        }
-
-        // Player Actions
-        function handleRollDice() {
-            if (gameState.actionPhase !== 'roll-dice' || !gameState.selectedCharacter) {
-                showToast('Primero debes seleccionar un personaje', 'error');
-                return;
-            }
-
-            const selectedChar = gameState.playerCharacters.find(c => c.id === gameState.selectedCharacter);
-            
-            if (!selectedChar || !selectedChar.isAlive) {
-                showToast('Personaje seleccionado no es válido', 'error');
-                return;
-            }
-
-            const dice = rollDice();
-            
-            const newPosition = (selectedChar.position + dice) % 30;
-            gameState.playerCharacters = gameState.playerCharacters.map(c =>
-                c.id === selectedChar.id ? { ...c, position: newPosition } : c
-            );
-            
-            const cell = gameState.board[newPosition];
-            let message = `Moviste a ${selectedChar.name} a la casilla ${newPosition}`;
-            
-            if (cell.type === 'special' && gameState.playerCards.length < 2) {
-                const newCard = getRandomWeaponCard();
-                gameState.playerCards.push(newCard);
-                message += ` y obtuviste ${newCard.name}!`;
-                showToast(`¡Carta obtenida: ${newCard.name}!`);
-            }
-            
-            gameState.diceResult = dice;
-            gameState.actionPhase = 'action'; 
-            gameState.message = message;
-            
-            render();
-        }
-
-        // --- FUNCIÓN MODIFICADA ---
-        function handleRollAbilityDice() {
-            if (gameState.captureAttemptsThisTurn >= 2) {
-                showToast('Ya intentaste capturar 2 veces este turno', 'error');
-                return;
-            }
-
-            const result = rollAbilityDice();
-            const selectedChar = gameState.playerCharacters.find(c => c.id === gameState.selectedCharacter);
-            
-            if (!selectedChar) return;
-            
-            const cell = gameState.board[selectedChar.position];
-            gameState.captureAttemptsThisTurn++; // Incrementar el contador
-            
-            if (cell.type === 'controlPoint' && result === 'Transformer') {
-                gameState.board = gameState.board.map(c =>
-                    c.id === cell.id ? { ...c, owner: 'player' } : c
-                );
-                gameState.message = `¡Capturaste el punto ${cell.controlPoint}!`;
-                showToast(`¡Punto ${cell.controlPoint} capturado!`);
-            } else {
-                gameState.message = result === 'Transformer' 
-                    ? 'Éxito, pero no hay punto que capturar' 
-                    : `Fallo al intentar capturar (${gameState.captureAttemptsThisTurn}/2 intentos)`;
-            }
-            
-            gameState.abilityDiceResult = result;
-            render();
-        }
-        // --- FIN FUNCIÓN MODIFICADA ---
-
-        function handleUseCard(cardIndex) {
-            const card = gameState.playerCards[cardIndex];
-            const selectedChar = gameState.playerCharacters.find(c => c.id === gameState.selectedCharacter);
-            
-            if (!card || !selectedChar || gameState.actionPhase !== 'attack') return;
-            
-            const targetAI = findAdjacentAI(selectedChar.position); 
-            
-            if (targetAI) {
-                const damagedAI = applyDamage(targetAI, card.damage, card.shieldPiercing);
-                gameState.aiCharacters = gameState.aiCharacters.map(c =>
-                    c.id === targetAI.id ? damagedAI : c
-                );
-                gameState.playerCards = gameState.playerCards.filter((_, i) => i !== cardIndex);
-                gameState.message = `¡Atacaste a ${targetAI.name} con ${card.name}! Daño: ${card.damage}`;
-                showToast(`¡Ataque exitoso!${!damagedAI.isAlive ? ' Enemigo eliminado!' : ''}`);
-                
-                gameState.actionPhase = 'end-turn-only';
-
-            } else {
-                showToast('El enemigo ya no está adyacente', 'error');
-                gameState.actionPhase = 'roll-dice';
-            }
-            
-            render();
-        }
-
-        // --- FUNCIÓN MODIFICADA ---
-        function handleBenefit(type) {
-            // Comprobar si ya se usó
-            if (gameState.benefitUsedThisTurn) {
-                showToast('Ya usaste el beneficio este turno', 'error');
-                return;
-            }
-
-            const selectedChar = gameState.playerCharacters.find(c => c.id === gameState.selectedCharacter);
-            
-            if (!selectedChar) return;
-            
-            const cell = gameState.board[selectedChar.position];
-            
-            if (cell.type === 'benefit') {
-                const updatedChar = type === 'health' ? healCharacter(selectedChar) : addShield(selectedChar);
-                gameState.playerCharacters = gameState.playerCharacters.map(c =>
-                    c.id === selectedChar.id ? updatedChar : c
-                );
-                
-                // Marcar el beneficio como usado
-                gameState.benefitUsedThisTurn = true; 
-                
-                gameState.message = `¡${selectedChar.name} recibió +1 ${type === 'health' ? 'Vida' : 'Escudo'}!`;
-                showToast(`+1 ${type === 'health' ? 'Vida' : 'Escudo'}`);
-            }
-            
-            // Volver a renderizar para que los botones de beneficio desaparezcan
-            render();
-        }
-        // --- FIN FUNCIÓN MODIFICADA ---
-
-        // --- FUNCIÓN MODIFICADA ---
-        function handleEndTurn() {
-            const winner = checkWinCondition();
-            
-            if (winner) {
-                showGameOver(winner);
-                return;
-            }
-            
-            if (gameState.turnCount >= 8 && !gameState.eventActivated) {
-                // ... (lógica de eventos)
-            }
-            
-            // Resetear flags para el turno de la IA
-            gameState.turn = 'ai';
-            gameState.actionPhase = 'select-character';
-            gameState.diceResult = null;
-            gameState.abilityDiceResult = null;
-            gameState.selectedCharacter = null; 
-            gameState.message = 'Turno de la IA...';
-            gameState.benefitUsedThisTurn = false; // Resetear
-            gameState.captureAttemptsThisTurn = 0; // Resetear
-            
-            render();
-            
-            setTimeout(executeAITurn, 1500);
-        }
-        // --- FIN FUNCIÓN MODIFICADA ---
-
-        // AI Turn
-        function executeAITurn() {
-            const aliveAIChars = gameState.aiCharacters.filter(c => c.isAlive);
-            
-            if (aliveAIChars.length === 0) {
-                finishAITurn();
-                return;
-            }
-            
-            const selectedChar = aliveAIChars.sort((a, b) => a.health - b.health)[0];
-            const dice = rollDice();
-            const newPosition = (selectedChar.position + dice) % 30;
-            
-            gameState.aiCharacters = gameState.aiCharacters.map(c =>
-                c.id === selectedChar.id ? { ...c, position: newPosition } : c
-            );
-            
-            let message = `IA movió ${selectedChar.name} a la casilla ${newPosition}`;
-            
-            const cell = gameState.board[newPosition];
-            
-            if (cell.type === 'special' && gameState.aiCards.length < 2) {
-                const newCard = getRandomWeaponCard();
-                gameState.aiCards.push(newCard);
-                message += ' y obtuvo un arma';
-            }
-            
-            // --- LÓGICA DE BENEFICIO DE LA IA (MODIFICADA) ---
-            if (cell.type === 'benefit' && !gameState.benefitUsedThisTurn) { // Asegurarse que la IA también obedece la regla
-                const benefitType = selectedChar.health < selectedChar.maxHealth ? 'health' : 'shield';
-                const updatedChar = benefitType === 'health' ? healCharacter(selectedChar) : addShield(selectedChar);
-                gameState.aiCharacters = gameState.aiCharacters.map(c =>
-                    c.id === selectedChar.id ? updatedChar : c
-                );
-                message += ` y recibió +1 ${benefitType === 'health' ? 'Vida' : 'Escudo'}`;
-                gameState.benefitUsedThisTurn = true; // La IA también usa su beneficio
-            }
-            // --- FIN LÓGICA IA ---
-            
-            const adjacentPlayer = gameState.playerCharacters.find(p =>
-                p.isAlive && isAdjacentPosition(newPosition, p.position)
-            );
-            
-            if (adjacentPlayer && gameState.aiCards.length > 0) {
-                const card = gameState.aiCards[0];
-                const damagedPlayer = applyDamage(adjacentPlayer, card.damage, card.shieldPiercing);
-                gameState.playerCharacters = gameState.playerCharacters.map(c =>
-                    c.id === adjacentPlayer.id ? damagedPlayer : c
-                );
-                gameState.aiCards = gameState.aiCards.slice(1);
-                message += ` y atacó a ${adjacentPlayer.name}!`;
-                showToast(`¡La IA te atacó con ${card.name}!`, 'error');
-            }
-            
-            // --- LÓGICA DE CAPTURA DE IA (MODIFICADA) ---
-            if (cell.type === 'controlPoint' && cell.owner !== 'ai' && gameState.captureAttemptsThisTurn < 2) {
-                const abilityResult = rollAbilityDice();
-                gameState.captureAttemptsThisTurn++; // La IA también gasta un intento
-                if (abilityResult === 'Transformer') {
-                    gameState.board = gameState.board.map(c =>
-                        c.id === cell.id ? { ...c, owner: 'ai' } : c
-                    );
-                    message += ` y capturó el punto ${cell.controlPoint}!`;
-                    showToast(`¡La IA capturó el punto ${cell.controlPoint}!`, 'warning');
-                }
-            }
-            // --- FIN LÓGICA IA ---
-            
-            gameState.message = message;
-            gameState.diceResult = dice;
-            render();
-            
-            setTimeout(finishAITurn, 2000);
-        }
-
-        // --- FUNCIÓN MODIFICADA ---
-        function finishAITurn() {
-            const winner = checkWinCondition();
-            
-            if (winner) {
-                showGameOver(winner);
-                return;
-            }
-            
-            // Resetear flags para el turno del Jugador
-            gameState.turn = 'player';
-            gameState.turnCount++;
-            gameState.actionPhase = 'select-character';
-            gameState.diceResult = null;
-            gameState.abilityDiceResult = null;
-            gameState.message = 'Tu turno. Selecciona un personaje para mover.';
-            gameState.benefitUsedThisTurn = false; // Resetear
-            gameState.captureAttemptsThisTurn = 0; // Resetear
-            
-            render();
-        }
-        // --- FIN FUNCIÓN MODIFICADA ---
-
-        // Game Over
-        function showGameOver(winner) {
-            gameState.phase = 'game-over';
-            gameState.winner = winner;
-            
-            const overlay = document.getElementById('gameOverScreen');
-            const emoji = document.getElementById('gameOverEmoji');
-            const title = document.getElementById('gameOverTitle');
-            const subtitle = document.getElementById('gameOverSubtitle');
-            
-            if (winner === 'player') {
-                emoji.textContent = '🏆';
-                title.textContent = '¡VICTORIA!';
-                title.className = 'game-over-title victory';
-                subtitle.textContent = 'Has dominado el campo de batalla';
-            } else if (winner === 'ai') {
-                emoji.textContent = '💀';
-                title.textContent = 'DERROTA';
-                title.className = 'game-over-title defeat';
-                subtitle.textContent = 'La IA ha conquistado Cybertron';
-            } else {
-                emoji.textContent = '🤝';
-                title.textContent = 'EMPATE';
-                title.className = 'game-over-title draw';
-                subtitle.textContent = 'La batalla termina en tablas';
-            }
-            
-            overlay.classList.remove('hidden');
-        }
-
-        function restartGame() {
-            gameState = {
-                phase: 'faction-selection',
-                turn: 'player',
-                turnCount: 1,
-                playerFaction: null,
-                aiFaction: null,
-                playerCharacters: [],
-                aiCharacters: [],
-                board: [],
-                playerCards: [],
-                aiCards: [],
-                diceResult: null,
-                abilityDiceResult: null,
-                selectedCharacter: null,
-                actionPhase: 'select-character',
-                winner: null,
-                eventActivated: false,
-                currentEvent: null,
-                message: 'Selecciona tu facción para comenzar',
-                benefitUsedThisTurn: false,
-                captureAttemptsThisTurn: 0
-            };
-            
-            document.getElementById('gameOverScreen').classList.add('hidden');
-            document.getElementById('gameScreen').classList.add('hidden');
-            document.getElementById('factionSelection').classList.remove('hidden');
-            document.getElementById('eventBanner').classList.add('hidden');
-        }
-    </script>
-</body>
-</html>
+  );
+}
